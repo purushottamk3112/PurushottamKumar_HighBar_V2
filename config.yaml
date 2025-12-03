@@ -1,0 +1,109 @@
+
+system:
+  python_version: "3.10"
+  random_seed: 42
+  log_level: "INFO"
+
+logging:
+  enabled: true
+  per_agent_logs: true
+  decision_logs: true
+  error_logs: true
+  log_format: "json"
+  log_dir: "logs"
+
+data:
+  input_csv: "synthetic_fb_ads_undergarments.csv"
+  output_dir: "outputs"
+
+schema:
+  strict_mode: true
+  allow_extra_columns: true
+  report_drift: true
+
+analysis:
+  baseline_days: 14
+  current_days: 7
+  min_sample_size: 30
+
+  segment_dimensions:
+    - creative_type
+    - audience_type
+    - platform
+    - country
+    - placement
+
+thresholds:
+  # --- Drops for Positive Metrics ---
+  roas_drop_severe: 0.30
+  roas_drop_moderate: 0.15
+  ctr_drop_severe: 0.25
+  ctr_drop_moderate: 0.10
+  cvr_drop_severe: 0.20          # NEW
+  cvr_drop_moderate: 0.10        # NEW
+
+  # --- Insight-Specific Thresholds (V2) ---
+  creative_ctr_drop_pct: 15.0
+  audience_cpa_increase_pct: 20.0
+  global_candidate_drop_pct: 10.0        # NEW
+  global_candidate_rise_pct: 10.0        # NEW
+  
+  # Fatigue thresholds
+  fatigue_ctr_drop_pct: 10.0             # NEW
+  fatigue_spend_growth_pct: -5.0         # NEW
+
+  # --- Guardrails ---
+  segment_min_spend: 50.0
+  min_spend_share: 0.05
+  stability_lower_bound: 0.5
+  stability_upper_bound: 2.0
+  min_segment_sample_size: 5             # NEW
+
+  # --- Statistical Tests ---
+  p_value_threshold: 0.05
+  confidence_minimum: 0.60
+  drift_pvalue_threshold: 0.05
+
+evaluator:
+  winsor_limits: [0.05, 0.05]
+  bootstrap_iterations: 1000
+  bootstrap_ci_pct: 95
+  fdr_alpha: 0.05
+  max_metrics_for_fdr: 200
+
+confidence_weights:
+  significance: 0.4
+  power: 0.2
+  effect_size: 0.3
+  consistency: 0.1
+
+agents:
+  data_agent:
+    timeout_seconds: 30
+    max_retries: 3
+
+  insight_agent:
+    max_hypotheses: 7
+    min_hypotheses: 3
+    require_evidence: true
+
+  evaluator_agent:
+    statistical_tests:
+      - t_test
+      - mann_whitney
+      - cliffs_delta
+      - bootstrap
+    baseline_required: true
+
+  creative_generator:
+    max_suggestions: 5
+    min_suggestions: 2
+    link_to_insights: true
+
+adaptive:
+  enabled: true
+  use_percentiles: true
+  roas_percentile_low: 25
+  roas_percentile_high: 75
+  ctr_percentile_low: 25
+  ctr_percentile_high: 75
